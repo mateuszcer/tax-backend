@@ -6,4 +6,6 @@ COPY ${JAR_FILE} application.jar
 
 CMD apt-get update -y
 
+EXPOSE 8080
+
 ENTRYPOINT ["java", "-jar", "/application.jar"]
