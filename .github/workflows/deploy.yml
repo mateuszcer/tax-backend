@@ -41,7 +41,7 @@ jobs:
           username: ${{ secrets.EC2_USER }}
           key: ${{ secrets.EC2_SSH_KEY }}
           script: |
-            docker stop webapp || true
-            docker rm webapp || true
+            docker stop spring-service || true
+            docker rm spring-service || true
             docker pull ${{ secrets.DOCKER_USERNAME }}/webapp:${{ github.sha }}
             docker run -d --name spring-service -p 80:8080 ${{ secrets.DOCKER_USERNAME }}/tax-backend-app:${{ github.sha }}
