@@ -23,9 +23,17 @@ public class AuthUserIdResolver implements HandlerMethodArgumentResolver {
                                   NativeWebRequest webRequest, WebDataBinderFactory binderFactory) {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         if (authentication != null && authentication.isAuthenticated()) {
-            Jwt jwt = (Jwt) authentication.getPrincipal();
-            return jwt.getClaimAsString("sub");
+            Object principal = authentication.getPrincipal();
+            if (principal instanceof Jwt jwt) {
+                return jwt.getClaimAsString("sub");
+            }
         }
+
+        String headerUserId = webRequest.getHeader("X-User-Id");
+        if (headerUserId != null && !headerUserId.isBlank()) {
+            return headerUserId.trim();
+        }
+
         return null;
     }
 }

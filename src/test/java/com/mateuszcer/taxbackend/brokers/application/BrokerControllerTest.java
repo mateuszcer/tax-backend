@@ -4,6 +4,7 @@ import com.mateuszcer.taxbackend.brokers.domain.ActionResult;
 import com.mateuszcer.taxbackend.brokers.domain.Broker;
 import com.mateuszcer.taxbackend.brokers.domain.BrokerFacade;
 import com.mateuszcer.taxbackend.brokers.domain.action.SaveBrokerAccessTokenAction;
+import com.mateuszcer.taxbackend.brokers.domain.action.SyncBrokerOrdersAction;
 import com.mateuszcer.taxbackend.brokers.domain.query.GetBrokerOAuthUrlQuery;
 import com.mateuszcer.taxbackend.brokers.domain.query.GetBrokerOrdersQuery;
 import org.junit.jupiter.api.Test;
@@ -63,6 +64,15 @@ class BrokerControllerTest {
         ResponseEntity response = brokerController.getOrders("coinbase", "user");
 
         assertThat(response.getStatusCode().value()).isEqualTo(401);
+    }
+
+    @Test
+    void syncOrders_Success_Returns200() {
+        when(brokerFacade.handle(any(SyncBrokerOrdersAction.class))).thenReturn(ActionResult.success(2));
+
+        ResponseEntity response = brokerController.syncOrders("coinbase", "user");
+
+        assertThat(response.getStatusCode().value()).isEqualTo(200);
     }
 }
 

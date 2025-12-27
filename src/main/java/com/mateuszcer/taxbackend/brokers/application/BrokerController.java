@@ -4,6 +4,7 @@ import com.mateuszcer.taxbackend.brokers.domain.ActionResult;
 import com.mateuszcer.taxbackend.brokers.domain.Broker;
 import com.mateuszcer.taxbackend.brokers.domain.BrokerFacade;
 import com.mateuszcer.taxbackend.brokers.domain.action.SaveBrokerAccessTokenAction;
+import com.mateuszcer.taxbackend.brokers.domain.action.SyncBrokerOrdersAction;
 import com.mateuszcer.taxbackend.brokers.domain.query.GetBrokerOAuthUrlQuery;
 import com.mateuszcer.taxbackend.brokers.domain.query.GetBrokerOrdersQuery;
 import com.mateuszcer.taxbackend.shared.authuserid.AuthUserId;
@@ -18,6 +19,7 @@ import jakarta.servlet.http.HttpServletResponse;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -160,9 +162,44 @@ public class BrokerController {
                 .body(ApiResponse.error(result.getMessage(), "BROKER_ORDERS_FAILED"));
     }
 
+    @PostMapping("/orders/sync")
+    @Operation(summary = "Sync broker orders", description = "Fetches user's orders from selected broker and publishes NewOrdersEvent")
+    @io.swagger.v3.oas.annotations.responses.ApiResponses({
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(
+                    responseCode = "200",
+                    description = "Orders synced successfully",
+                    content = @Content(schema = @Schema(implementation = ApiResponse.class))
+            ),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(
+                    responseCode = "400",
+                    description = "Unsupported broker",
+                    content = @Content(schema = @Schema(implementation = ApiResponse.class))
+            ),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(
+                    responseCode = "401",
+                    description = "Missing/invalid JWT or broker not integrated",
+                    content = @Content(schema = @Schema(implementation = ApiResponse.class))
+            )
+    })
+    public ResponseEntity<ApiResponse<SyncOrdersResponse>> syncOrders(@PathVariable String brokerId, @AuthUserId String authUserId) {
+        Broker id = parseBroker(brokerId);
+
+        ActionResult<Integer> result = brokerFacade.handle(new SyncBrokerOrdersAction(id, authUserId));
+        if (result.isSuccess()) {
+            return ResponseEntity.ok(ApiResponse.success(new SyncOrdersResponse(result.getData()), "Orders synced successfully"));
+        }
+        return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                .body(ApiResponse.error(result.getMessage(), "BROKER_ORDERS_SYNC_FAILED"));
+    }
+
     @Schema(name = "BrokerAuthUrlResponse", description = "Response containing the broker OAuth authorization URL")
     public record AuthUrlResponse(
             @Schema(description = "Broker OAuth URL to redirect the user to", example = "https://broker.example.com/oauth/authorize?...") String authUrl
+    ) {}
+
+    @Schema(name = "BrokerSyncOrdersResponse", description = "Response containing the number of orders synced")
+    public record SyncOrdersResponse(
+            @Schema(description = "Number of orders published to the system", example = "42") Integer syncedOrders
     ) {}
 
     private Broker parseBroker(String brokerId) {
