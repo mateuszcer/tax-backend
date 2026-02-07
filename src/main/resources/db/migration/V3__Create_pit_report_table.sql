@@ -1,6 +1,6 @@
 CREATE TABLE pit_report
 (
-    id         BIGINT AUTO_INCREMENT PRIMARY KEY,
+    id         BIGSERIAL PRIMARY KEY,
     user_id    VARCHAR(255) NOT NULL,
     tax_year   INT          NOT NULL,
     cost       DECIMAL(38, 18) NOT NULL,

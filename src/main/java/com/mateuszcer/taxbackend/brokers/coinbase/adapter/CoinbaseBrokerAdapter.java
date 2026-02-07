@@ -10,6 +10,7 @@ import com.mateuszcer.taxbackend.shared.events.NewOrdersEvent;
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.List;
+import java.util.Objects;
 
 public class CoinbaseBrokerAdapter implements BrokerAdapter {
 
@@ -52,7 +53,7 @@ public class CoinbaseBrokerAdapter implements BrokerAdapter {
         }
 
         List<NewOrdersEvent.OrderPayload> payload = data.getOrders().stream()
-                .filter(o -> o != null)
+                .filter(Objects::nonNull)
                 .map(o -> new NewOrdersEvent.OrderPayload(
                         o.getOrderId(),
                         o.getProductId(),

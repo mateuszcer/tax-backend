@@ -4,6 +4,7 @@ import software.amazon.awssdk.services.cognitoidentityprovider.CognitoIdentityPr
 import software.amazon.awssdk.services.cognitoidentityprovider.model.*;
 
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Service;
 
 import javax.crypto.Mac;
@@ -13,6 +14,7 @@ import java.util.Base64;
 import java.util.Map;
 
 @Service
+@Profile("!dev & !test & !simple-auth")
 public class CognitoService {
 
     @Value("${cognito.userPoolId}")

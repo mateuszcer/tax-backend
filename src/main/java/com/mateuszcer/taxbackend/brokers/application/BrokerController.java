@@ -8,9 +8,11 @@ import com.mateuszcer.taxbackend.brokers.domain.action.SyncBrokerOrdersAction;
 import com.mateuszcer.taxbackend.brokers.domain.query.GetBrokerOAuthUrlQuery;
 import com.mateuszcer.taxbackend.brokers.domain.query.GetBrokerOrdersQuery;
 import com.mateuszcer.taxbackend.shared.authuserid.AuthUserId;
+import com.mateuszcer.taxbackend.shared.config.FrontendConfig;
 import com.mateuszcer.taxbackend.shared.exception.BusinessException;
 import com.mateuszcer.taxbackend.shared.response.ApiResponse;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
@@ -19,12 +21,7 @@ import jakarta.servlet.http.HttpServletResponse;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import java.io.IOException;
 import java.util.Locale;
@@ -37,9 +34,11 @@ import java.util.Locale;
 public class BrokerController {
 
     private final BrokerFacade brokerFacade;
+    private final FrontendConfig frontendConfig;
 
-    public BrokerController(BrokerFacade brokerFacade) {
+    public BrokerController(BrokerFacade brokerFacade, FrontendConfig frontendConfig) {
         this.brokerFacade = brokerFacade;
+        this.frontendConfig = frontendConfig;
     }
 
     @GetMapping("/auth")
@@ -92,44 +91,53 @@ public class BrokerController {
         return ResponseEntity.ok(ApiResponse.success(new AuthUrlResponse(url), "OAuth URL generated successfully"));
     }
 
-    @GetMapping("/auth/callback")
-    @Operation(summary = "Broker OAuth callback", description = "Handles broker OAuth callback and saves access token")
+    @PostMapping("/auth/exchange")
+    @Operation(summary = "Exchange OAuth code", description = "Exchanges OAuth authorization code for access tokens")
     @io.swagger.v3.oas.annotations.responses.ApiResponses({
             @io.swagger.v3.oas.annotations.responses.ApiResponse(
                     responseCode = "200",
-                    description = "Broker integration successful",
+                    description = "Code exchanged successfully",
                     content = @Content(schema = @Schema(implementation = ApiResponse.class))
             ),
             @io.swagger.v3.oas.annotations.responses.ApiResponse(
                     responseCode = "400",
-                    description = "Unsupported broker or invalid code parameter",
+                    description = "Unsupported broker or invalid code",
                     content = @Content(schema = @Schema(implementation = ApiResponse.class))
             ),
             @io.swagger.v3.oas.annotations.responses.ApiResponse(
                     responseCode = "401",
-                    description = "Integration failed or missing/invalid JWT",
+                    description = "Missing/invalid JWT or exchange failed",
                     content = @Content(schema = @Schema(implementation = ApiResponse.class))
             )
     })
-    public ResponseEntity<ApiResponse<String>> oauthCallback(
+    public ResponseEntity<ApiResponse<String>> exchangeCode(
             @PathVariable String brokerId,
-            @io.swagger.v3.oas.annotations.Parameter(
-                    description = "OAuth authorization code returned by the broker",
-                    required = true,
-                    example = "b3d4c5..."
-            )
-            @RequestParam String code,
-            @AuthUserId String authUserId
-    ) {
-        Broker id = parseBroker(brokerId);
-
-        boolean saved = brokerFacade.handle(new SaveBrokerAccessTokenAction(id, code, authUserId));
-        if (saved) {
-            return ResponseEntity.ok(ApiResponse.success("Successfully integrated with " + id.name().toLowerCase(Locale.ROOT)));
+            @RequestBody ExchangeCodeRequest request,
+            @AuthUserId String authUserId) {
+        
+        log.info("Exchanging OAuth code for broker {} and user {}", brokerId, authUserId);
+        
+        try {
+            Broker id = parseBroker(brokerId);
+            boolean saved = brokerFacade.handle(new SaveBrokerAccessTokenAction(id, request.code(), authUserId));
+            
+            if (saved) {
+                log.info("Successfully exchanged code and saved tokens for user {} with broker {}", authUserId, brokerId);
+                return ResponseEntity.ok(ApiResponse.success("Successfully integrated with " + brokerId.toLowerCase(Locale.ROOT)));
+            } else {
+                log.warn("Failed to save access token for user {} with broker {}", authUserId, brokerId);
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                        .body(ApiResponse.error("Failed to exchange authorization code", "CODE_EXCHANGE_FAILED"));
+            }
+        } catch (BusinessException e) {
+            log.warn("Invalid broker in code exchange: {}", brokerId);
+            return ResponseEntity.badRequest()
+                    .body(ApiResponse.error("Unsupported broker: " + brokerId, "UNSUPPORTED_BROKER"));
+        } catch (Exception e) {
+            log.error("Failed to exchange code for user {} with broker {}", authUserId, brokerId, e);
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(ApiResponse.error("Failed to exchange authorization code: " + e.getMessage(), "CODE_EXCHANGE_FAILED"));
         }
-
-        return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                .body(ApiResponse.error("Integration failed. Please try again.", "BROKER_INTEGRATION_FAILED"));
     }
 
     @GetMapping("/orders")
@@ -197,6 +205,11 @@ public class BrokerController {
             @Schema(description = "Broker OAuth URL to redirect the user to", example = "https://broker.example.com/oauth/authorize?...") String authUrl
     ) {}
 
+    @Schema(name = "BrokerExchangeCodeRequest", description = "Request to exchange OAuth authorization code")
+    public record ExchangeCodeRequest(
+            @Schema(description = "OAuth authorization code from broker", required = true, example = "abc123xyz...") String code
+    ) {}
+
     @Schema(name = "BrokerSyncOrdersResponse", description = "Response containing the number of orders synced")
     public record SyncOrdersResponse(
             @Schema(description = "Number of orders published to the system", example = "42") Integer syncedOrders
@@ -210,5 +223,3 @@ public class BrokerController {
         }
     }
 }
-
-

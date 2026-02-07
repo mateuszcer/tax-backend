@@ -1,0 +1,117 @@
+{
+  "orders": [
+    {
+      "order_id": "b2953b47-ed65-425b-810d-2b46a076c3c1",
+      "product_id": "ONDO-USDC",
+      "user_id": "e780ba24-b1c6-538f-820c-320166ef538b",
+      "order_configuration": {
+        "limit_limit_gtc": {
+          "base_size": "889",
+          "limit_price": "1.0365",
+          "post_only": false,
+          "rfq_disabled": false
+        }
+      },
+      "side": "SELL",
+      "client_order_id": "b839b84f-0231-479a-9b04-8355903788c4",
+      "status": "FILLED",
+      "time_in_force": "GOOD_UNTIL_CANCELLED",
+      "created_time": "2024-05-17T21:51:59.992429Z",
+      "completion_percentage": "100.00",
+      "filled_size": "889",
+      "average_filled_price": "1.0365",
+      "fee": "",
+      "number_of_fills": "2",
+      "filled_value": "921.4485",
+      "pending_cancel": false,
+      "size_in_quote": false,
+      "total_fees": "5.528691",
+      "size_inclusive_of_fees": false,
+      "total_value_after_fees": "915.919809",
+      "trigger_status": "INVALID_ORDER_TYPE",
+      "order_type": "LIMIT",
+      "reject_reason": "REJECT_REASON_UNSPECIFIED",
+      "settled": true,
+      "product_type": "SPOT",
+      "reject_message": "",
+      "cancel_message": "",
+      "order_placement_source": "RETAIL_ADVANCED",
+      "outstanding_hold_amount": "0",
+      "is_liquidation": false,
+      "last_fill_time": "2024-05-18T07:26:14.215Z",
+      "edit_history": [
+        {
+          "price": "1.04",
+          "size": "889",
+          "replace_accept_timestamp": "2024-05-18T07:17:01.850731648Z"
+        },
+        {
+          "price": "1.038",
+          "size": "889",
+          "replace_accept_timestamp": "2024-05-18T07:22:40.452031813Z"
+        },
+        {
+          "price": "1.0365",
+          "size": "889",
+          "replace_accept_timestamp": "2024-05-18T07:24:43.623000515Z"
+        }
+      ],
+      "leverage": "",
+      "margin_type": "UNKNOWN_MARGIN_TYPE",
+      "retail_portfolio_id": "e780ba24-b1c6-538f-820c-320166ef538b",
+      "originating_order_id": "",
+      "attached_order_id": "",
+      "attached_order_configuration": null
+    },
+    {
+      "order_id": "b9352ff7-6865-4e59-8879-b2e7651ad472",
+      "product_id": "ONDO-USDC",
+      "user_id": "e780ba24-b1c6-538f-820c-320166ef538b",
+      "order_configuration": {
+        "limit_limit_gtc": {
+          "base_size": "322",
+          "limit_price": "0.73574",
+          "post_only": false,
+          "rfq_disabled": false
+        }
+      },
+      "side": "BUY",
+      "client_order_id": "4de258f6-f3e1-4537-9d2f-12c50cdbe2c4",
+      "status": "FILLED",
+      "time_in_force": "GOOD_UNTIL_CANCELLED",
+      "created_time": "2024-04-30T11:08:33.174191Z",
+      "completion_percentage": "100.00",
+      "filled_size": "322",
+      "average_filled_price": "0.7347532608695652",
+      "fee": "",
+      "number_of_fills": "2",
+      "filled_value": "236.59055",
+      "pending_cancel": false,
+      "size_in_quote": false,
+      "total_fees": "1.8927244",
+      "size_inclusive_of_fees": false,
+      "total_value_after_fees": "238.4832744",
+      "trigger_status": "INVALID_ORDER_TYPE",
+      "order_type": "LIMIT",
+      "reject_reason": "REJECT_REASON_UNSPECIFIED",
+      "settled": true,
+      "product_type": "SPOT",
+      "reject_message": "",
+      "cancel_message": "",
+      "order_placement_source": "RETAIL_ADVANCED",
+      "outstanding_hold_amount": "0",
+      "is_liquidation": false,
+      "last_fill_time": "2024-04-30T11:08:33.246055Z",
+      "edit_history": [],
+      "leverage": "",
+      "margin_type": "UNKNOWN_MARGIN_TYPE",
+      "retail_portfolio_id": "e780ba24-b1c6-538f-820c-320166ef538b",
+      "originating_order_id": "",
+      "attached_order_id": "",
+      "attached_order_configuration": null
+    }
+  ],
+  "sequence": "0",
+  "has_next": false,
+  "cursor": ""
+}

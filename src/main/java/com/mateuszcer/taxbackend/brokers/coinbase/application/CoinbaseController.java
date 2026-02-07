@@ -78,7 +78,38 @@ public class CoinbaseController {
     }
 
     @GetMapping("/auth/callback")
-    @Operation(summary = "Coinbase OAuth callback", description = "Handles Coinbase OAuth callback and saves access token")
+    @Operation(summary = "OAuth callback (GET)", description = "Handles OAuth callback with code as query parameter")
+    @io.swagger.v3.oas.annotations.responses.ApiResponses({
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(
+                    responseCode = "200",
+                    description = "Coinbase integration successful",
+                    content = @Content(schema = @Schema(implementation = ApiResponse.class))
+            ),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(
+                    responseCode = "401",
+                    description = "Integration failed or missing/invalid JWT",
+                    content = @Content(schema = @Schema(implementation = ApiResponse.class))
+            )
+    })
+    public ResponseEntity<ApiResponse<String>> oauthCallbackGet(
+            @RequestParam String code,
+            @AuthUserId String authUserId) {
+        
+        log.info("Processing OAuth callback (GET) for user: {}", authUserId);
+        
+        boolean saved = brokerFacade.handle(new SaveBrokerAccessTokenAction(Broker.COINBASE, code, authUserId));
+        if (saved) {
+            log.info("Successfully saved Coinbase access token for user: {}", authUserId);
+            return ResponseEntity.ok(ApiResponse.success("Successfully integrated with Coinbase"));
+        } else {
+            log.warn("Failed to save Coinbase access token for user: {}", authUserId);
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(ApiResponse.error("Integration failed. Please try again.", "COINBASE_INTEGRATION_FAILED"));
+        }
+    }
+
+    @PostMapping("/auth/exchange")
+    @Operation(summary = "Exchange OAuth code (POST)", description = "Exchanges OAuth authorization code for Coinbase access tokens")
     @io.swagger.v3.oas.annotations.responses.ApiResponses({
             @io.swagger.v3.oas.annotations.responses.ApiResponse(
                     responseCode = "200",
@@ -96,18 +127,13 @@ public class CoinbaseController {
                     content = @Content(schema = @Schema(implementation = ApiResponse.class))
             )
     })
-    public ResponseEntity<ApiResponse<String>> oauthCallback(
-            @io.swagger.v3.oas.annotations.Parameter(
-                    description = "OAuth authorization code returned by Coinbase",
-                    required = true,
-                    example = "b3d4c5..."
-            )
-            @RequestParam String code,
+    public ResponseEntity<ApiResponse<String>> exchangeCodePost(
+            @RequestBody ExchangeCodeRequest request,
             @AuthUserId String authUserId) {
         
-        log.info("Processing Coinbase OAuth callback for user: {}", authUserId);
+        log.info("Exchanging OAuth code (POST) for user: {}", authUserId);
         
-        boolean saved = brokerFacade.handle(new SaveBrokerAccessTokenAction(Broker.COINBASE, code, authUserId));
+        boolean saved = brokerFacade.handle(new SaveBrokerAccessTokenAction(Broker.COINBASE, request.code(), authUserId));
         if (saved) {
             log.info("Successfully saved Coinbase access token for user: {}", authUserId);
             return ResponseEntity.ok(ApiResponse.success("Successfully integrated with Coinbase"));
@@ -151,5 +177,11 @@ public class CoinbaseController {
     public record AuthUrlResponse(
             @Schema(description = "Coinbase OAuth URL to redirect the user to", example = "https://www.coinbase.com/oauth/authorize?...") 
             String authUrl
+    ) {}
+
+    @Schema(name = "CoinbaseExchangeCodeRequest", description = "Request to exchange OAuth authorization code")
+    public record ExchangeCodeRequest(
+            @Schema(description = "OAuth authorization code from Coinbase", required = true, example = "abc123xyz...") 
+            String code
     ) {}
 }

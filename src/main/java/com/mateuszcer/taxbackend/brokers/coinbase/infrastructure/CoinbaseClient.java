@@ -23,14 +23,23 @@ public class CoinbaseClient {
 
     private final CoinbaseTokenRepository coinbaseTokenRepository;
 
-    private final String LIST_ORDERS = "https://api.coinbase.com/api/v3/brokerage/orders/historical/batch";
-    private final String TOKEN = "https://login.coinbase.com/oauth2/token";
+    @Value("${coinbase.base-url:https://api.coinbase.com}")
+    private String coinbaseBaseUrl;
+
+    @Value("${coinbase.oauth-url:https://login.coinbase.com}")
+    private String coinbaseOAuthUrl;
+
+    @Value("${coinbase.oauth-api-url:https://login.coinbase.com}")
+    private String coinbaseOAuthApiUrl;
 
     @Value("${coinbase.client.id}")
     private String clientId;
 
     @Value("${coinbase.client.secret}")
     private String clientSecret;
+
+    @Value("${frontend.base-url}")
+    private String frontendBaseUrl;
 
 
     @Autowired
@@ -41,51 +50,59 @@ public class CoinbaseClient {
 
 
     public String getRedirectUrl() {
-
-        UriBuilder uriBuilder = UriComponentsBuilder.fromUri(URI.create("https://login.coinbase.com/oauth2/auth"));
+        String redirectUri = frontendBaseUrl + "/integrations/callback";
+        
+        UriBuilder uriBuilder = UriComponentsBuilder.fromUri(URI.create(coinbaseOAuthUrl + "/oauth2/auth"));
         uriBuilder.queryParam("client_id", clientId);
         uriBuilder.queryParam("response_type", "code");
         uriBuilder.queryParam("scope", "wallet:accounts:read,wallet:transactions:read,offline_access");
+        uriBuilder.queryParam("redirect_uri", redirectUri);
 
         URI uri = uriBuilder.build();
         return uri.toString();
     }
 
     public TokenResponse getAccessToken(String code) {
-
+        String redirectUri = frontendBaseUrl + "/integrations/callback";
 
         MultiValueMap<String, String> formData = new LinkedMultiValueMap<>();
         formData.add("grant_type", "authorization_code");
         formData.add("code", code);
         formData.add("client_id", clientId);
         formData.add("client_secret", clientSecret);
-        formData.add("redirect_uri", "https://www.taxool.com");
+        formData.add("redirect_uri", redirectUri);
 
-        TokenResponse tokenResponse = restClient.post().uri(TOKEN).contentType(MediaType.APPLICATION_FORM_URLENCODED).body(formData).retrieve().toEntity(TokenResponse.class).getBody();
+        String tokenUrl = coinbaseOAuthApiUrl + "/oauth2/token";
+        TokenResponse tokenResponse = restClient.post().uri(tokenUrl).contentType(MediaType.APPLICATION_FORM_URLENCODED).body(formData).retrieve().toEntity(TokenResponse.class).getBody();
 
         return tokenResponse;
     }
 
     public TokenResponse refreshAccessToken(String refreshToken) {
+        String redirectUri = frontendBaseUrl + "/integrations/callback";
+        
         MultiValueMap<String, String> formData = new LinkedMultiValueMap<>();
         formData.add("grant_type", "refresh_token");
         formData.add("client_id", clientId);
         formData.add("client_secret", clientSecret);
-        formData.add("redirect_uri", "https://www.taxool.com");
+        formData.add("redirect_uri", redirectUri);
         formData.add("refresh_token", refreshToken);
 
-        TokenResponse tokenResponse = restClient.post().uri(TOKEN).contentType(MediaType.APPLICATION_FORM_URLENCODED).body(formData).retrieve().toEntity(TokenResponse.class).getBody();
+        String tokenUrl = coinbaseOAuthApiUrl + "/oauth2/token";
+        TokenResponse tokenResponse = restClient.post().uri(tokenUrl).contentType(MediaType.APPLICATION_FORM_URLENCODED).body(formData).retrieve().toEntity(TokenResponse.class).getBody();
 
         return tokenResponse;
     }
 
     public String getUserInfo(String accessToken) {
-        return restClient.get().uri("https://api.coinbase.com/v2/user/").header(HttpHeaders.AUTHORIZATION, "Bearer " + accessToken).accept(MediaType.APPLICATION_JSON).retrieve().toEntity(String.class).getBody();
+        String userUrl = coinbaseBaseUrl + "/v2/user/";
+        return restClient.get().uri(userUrl).header(HttpHeaders.AUTHORIZATION, "Bearer " + accessToken).accept(MediaType.APPLICATION_JSON).retrieve().toEntity(String.class).getBody();
     }
 
     public CoinbaseGetOrdersResponse getOrders(String accessToken) {
+        String ordersUrl = coinbaseBaseUrl + "/api/v3/brokerage/orders/historical/batch";
         return restClient.get()
-                .uri(LIST_ORDERS)
+                .uri(ordersUrl)
                 .header(HttpHeaders.AUTHORIZATION, "Bearer " + accessToken)
                 .accept(MediaType.APPLICATION_JSON)
                 .retrieve()

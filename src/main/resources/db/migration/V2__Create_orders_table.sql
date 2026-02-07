@@ -1,6 +1,6 @@
 CREATE TABLE orders
 (
-    id          BIGINT AUTO_INCREMENT PRIMARY KEY,
+    id          BIGSERIAL PRIMARY KEY,
     user_id     VARCHAR(255) NOT NULL,
     external_id VARCHAR(255) NOT NULL,
     product_id  VARCHAR(255) NOT NULL,

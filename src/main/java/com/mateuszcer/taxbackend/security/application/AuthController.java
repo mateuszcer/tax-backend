@@ -1,6 +1,6 @@
 package com.mateuszcer.taxbackend.security.application;
 
-import com.mateuszcer.taxbackend.security.CognitoService;
+import com.mateuszcer.taxbackend.security.domain.AuthService;
 import com.mateuszcer.taxbackend.security.application.dto.UserConfirmSignUpRequest;
 import com.mateuszcer.taxbackend.security.application.dto.UserSignInRequest;
 import com.mateuszcer.taxbackend.security.application.dto.UserSignUpRequest;
@@ -20,10 +20,10 @@ import org.springframework.web.bind.annotation.*;
 @Slf4j
 public class AuthController {
 
-    private final CognitoService cognitoService;
+    private final AuthService authService;
 
-    public AuthController(CognitoService cognitoService) {
-        this.cognitoService = cognitoService;
+    public AuthController(AuthService authService) {
+        this.authService = authService;
     }
 
     @PostMapping("/signUp")
@@ -48,7 +48,7 @@ public class AuthController {
     public ResponseEntity<ApiResponse<String>> signUp(@Valid @RequestBody UserSignUpRequest userSignUpRequest) {
         log.info("User sign up attempt for email: {}", userSignUpRequest.email());
         
-        cognitoService.signUpUser(userSignUpRequest.email(), userSignUpRequest.password());
+        authService.signUp(userSignUpRequest.email(), userSignUpRequest.password());
         
         log.info("User signed up successfully: {}", userSignUpRequest.email());
         return ResponseEntity.ok(ApiResponse.success("User registered successfully. Please check your email for confirmation code."));
@@ -76,7 +76,7 @@ public class AuthController {
     public ResponseEntity<ApiResponse<String>> confirmSignUp(@Valid @RequestBody UserConfirmSignUpRequest userConfirmSignUpRequest) {
         log.info("User confirmation attempt for email: {}", userConfirmSignUpRequest.email());
         
-        cognitoService.confirmSignUp(userConfirmSignUpRequest.email(), userConfirmSignUpRequest.code());
+        authService.confirmSignUp(userConfirmSignUpRequest.email(), userConfirmSignUpRequest.code());
         
         log.info("User confirmed successfully: {}", userConfirmSignUpRequest.email());
         return ResponseEntity.ok(ApiResponse.success("User confirmed successfully. You can now sign in."));
@@ -109,7 +109,7 @@ public class AuthController {
     public ResponseEntity<ApiResponse<AuthResponse>> login(@Valid @RequestBody UserSignInRequest userSignInRequest) {
         log.info("User sign in attempt for email: {}", userSignInRequest.email());
         
-        var authResult = cognitoService.signIn(userSignInRequest.email(), userSignInRequest.password());
+        var authResult = authService.signIn(userSignInRequest.email(), userSignInRequest.password());
         var response = new AuthResponse(authResult.idToken(), authResult.accessToken());
         
         log.info("User signed in successfully: {}", userSignInRequest.email());

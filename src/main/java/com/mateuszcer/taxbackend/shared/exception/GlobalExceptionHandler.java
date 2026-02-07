@@ -1,5 +1,6 @@
 package com.mateuszcer.taxbackend.shared.exception;
 
+import com.mateuszcer.taxbackend.security.domain.AuthenticationException;
 import com.mateuszcer.taxbackend.shared.response.ApiResponse;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
@@ -45,6 +46,16 @@ public class GlobalExceptionHandler {
         
         return ResponseEntity.badRequest()
                 .body(ApiResponse.error("Invalid input: " + ex.getMessage(), "CONSTRAINT_VIOLATION"));
+    }
+
+    @ExceptionHandler(AuthenticationException.class)
+    public ResponseEntity<ApiResponse<String>> handleAuthenticationException(
+            AuthenticationException ex) {
+        
+        log.warn("Authentication failed: {}", ex.getMessage());
+        
+        return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                .body(ApiResponse.error(ex.getMessage(), "AUTHENTICATION_FAILED"));
     }
 
     @ExceptionHandler(BadCredentialsException.class)
