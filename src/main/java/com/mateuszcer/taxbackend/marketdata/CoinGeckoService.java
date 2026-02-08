@@ -33,7 +33,7 @@ public class CoinGeckoService {
     @Cacheable(value = "marketData", key = "#vsCurrency + '_' + #perPage + '_' + #page")
     public String getMarketData(String vsCurrency, int perPage, int page) {
         String url = String.format(
-                "%s/coins/markets?vs_currency=%s&order=market_cap_desc&per_page=%d&page=%d&sparkline=false&price_change_percentage=24h",
+                "%s/coins/markets?vs_currency=%s&order=market_cap_desc&per_page=%d&page=%d&sparkline=true&price_change_percentage=24h",
                 COINGECKO_API_URL,
                 vsCurrency,
                 perPage,
