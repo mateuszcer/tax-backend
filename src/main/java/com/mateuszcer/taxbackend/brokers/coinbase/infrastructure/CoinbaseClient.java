@@ -50,7 +50,7 @@ public class CoinbaseClient {
 
 
     public String getRedirectUrl() {
-        String redirectUri = frontendBaseUrl + "/integrations/callback";
+        String redirectUri = frontendBaseUrl;
         
         UriBuilder uriBuilder = UriComponentsBuilder.fromUri(URI.create(coinbaseOAuthUrl + "/oauth2/auth"));
         uriBuilder.queryParam("client_id", clientId);
@@ -63,7 +63,7 @@ public class CoinbaseClient {
     }
 
     public TokenResponse getAccessToken(String code) {
-        String redirectUri = frontendBaseUrl + "/integrations/callback";
+        String redirectUri = frontendBaseUrl;
 
         MultiValueMap<String, String> formData = new LinkedMultiValueMap<>();
         formData.add("grant_type", "authorization_code");
