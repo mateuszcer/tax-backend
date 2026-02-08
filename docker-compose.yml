@@ -22,7 +22,7 @@ services:
     depends_on:
       - db
     environment:
-      - SPRING_PROFILES_ACTIVE=simple-auth
+      - SPRING_PROFILES_ACTIVE=dev
       - DB_HOST=db
       - DB_PORT=5432
       - DB_NAME=taxool-db
@@ -30,7 +30,7 @@ services:
       - DB_PASSWORD=password
       - JWT_SECRET=demo-secret-please-change-for-production-at-least-32-chars
       - CORS_ORIGINS=http://localhost:3000,http://localhost:5173,https://taxool.com,https://www.taxool.com,http://taxool.com,http://www.taxool.com
-      - FRONTEND_URL=https://www.taxool.com
+      - FRONTEND_URL=https://taxool.com
       - COINBASE_CLIENT_ID=${COINBASE_CLIENT_ID}
       - COINBASE_CLIENT_SECRET=${COINBASE_CLIENT_SECRET}
       - COINBASE_BASE_URL=${COINBASE_BASE_URL:-https://api.coinbase.com}

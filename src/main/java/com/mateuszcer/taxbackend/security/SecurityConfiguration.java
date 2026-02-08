@@ -24,6 +24,7 @@ public class SecurityConfiguration {
 
     private static final String[] PUBLIC_ENDPOINTS = {
             "/auth/**",
+            "/api/market/**",  // Market data (cached, public)
             "/actuator/health",
             "/actuator/info",
             "/api-docs/**",

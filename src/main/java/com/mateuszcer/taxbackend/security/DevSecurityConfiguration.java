@@ -22,4 +22,6 @@ public class DevSecurityConfiguration {
         
         return http.build();
     }
+    
+    // Note: /api/market/** is public in all profiles (dev, simple-auth, prod)
 }
