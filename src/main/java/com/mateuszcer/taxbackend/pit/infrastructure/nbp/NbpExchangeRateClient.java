@@ -38,48 +38,68 @@ public class NbpExchangeRateClient implements ExchangeRateProvider {
     @Override
     @Cacheable(value = "exchangeRates", key = "#currencyCode + '_' + #date")
     public Optional<BigDecimal> getRate(String currencyCode, LocalDate date) {
-        try {
-            String url = String.format("%s/%s/%s/?format=json", 
-                    NBP_API_URL, 
-                    currencyCode.toLowerCase(), 
-                    date.format(DATE_FORMATTER));
+        // Try the requested date first, then fallback to previous days (up to 7 days)
+        // This handles weekends and Polish holidays when NBP doesn't publish rates
+        for (int daysBack = 0; daysBack <= 7; daysBack++) {
+            LocalDate tryDate = date.minusDays(daysBack);
             
-            log.debug("Fetching NBP exchange rate for {} on {}", currencyCode, date);
-            
-            String response = restClient.get()
-                    .uri(url)
-                    .retrieve()
-                    .body(String.class);
-            
-            if (response == null) {
-                log.warn("Empty response from NBP API for {} on {}", currencyCode, date);
-                return Optional.empty();
+            try {
+                String url = String.format("%s/%s/%s/?format=json", 
+                        NBP_API_URL, 
+                        currencyCode.toLowerCase(), 
+                        tryDate.format(DATE_FORMATTER));
+                
+                if (daysBack == 0) {
+                    log.debug("Fetching NBP exchange rate for {} on {}", currencyCode, tryDate);
+                } else {
+                    log.debug("Trying fallback date {} for {} (original date: {})", 
+                            tryDate, currencyCode, date);
+                }
+                
+                String response = restClient.get()
+                        .uri(url)
+                        .retrieve()
+                        .body(String.class);
+                
+                if (response == null) {
+                    continue; // Try previous day
+                }
+                
+                // Parse JSON response
+                JsonNode root = objectMapper.readTree(response);
+                JsonNode rates = root.path("rates");
+                
+                if (!rates.isArray() || rates.size() == 0) {
+                    continue; // Try previous day
+                }
+                
+                JsonNode firstRate = rates.get(0);
+                BigDecimal mid = firstRate.path("mid").decimalValue();
+                
+                if (mid != null && mid.signum() > 0) {
+                    if (daysBack > 0) {
+                        log.info("NBP rate for {} on {} not available (weekend/holiday), using rate from {}: {} PLN", 
+                                currencyCode, date, tryDate, mid);
+                    } else {
+                        log.info("NBP rate for {} on {}: {} PLN", currencyCode, date, mid);
+                    }
+                    return Optional.of(mid);
+                }
+                
+            } catch (Exception e) {
+                // If it's a 404, it's likely a weekend/holiday, try previous day
+                if (daysBack == 7) {
+                    // Only log error on the last attempt
+                    log.error("Failed to fetch NBP exchange rate for {} on {} (tried {} days back): {}", 
+                            currencyCode, date, daysBack, e.getMessage());
+                }
+                // Continue to next day
             }
-            
-            // Parse JSON response
-            JsonNode root = objectMapper.readTree(response);
-            JsonNode rates = root.path("rates");
-            
-            if (!rates.isArray() || rates.size() == 0) {
-                log.warn("No rates found in NBP response for {} on {}", currencyCode, date);
-                return Optional.empty();
-            }
-            
-            JsonNode firstRate = rates.get(0);
-            BigDecimal mid = firstRate.path("mid").decimalValue();
-            
-            if (mid != null && mid.signum() > 0) {
-                log.info("NBP rate for {} on {}: {} PLN", currencyCode, date, mid);
-                return Optional.of(mid);
-            }
-            
-            return Optional.empty();
-            
-        } catch (Exception e) {
-            log.error("Failed to fetch NBP exchange rate for {} on {}: {}", 
-                    currencyCode, date, e.getMessage());
-            return Optional.empty();
         }
+        
+        log.warn("Could not find NBP exchange rate for {} around date {} (tried 7 days back)", 
+                currencyCode, date);
+        return Optional.empty();
     }
     
     @Override
